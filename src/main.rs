@@ -24,24 +24,25 @@ fn browse_wikipedia(url: String) -> Result<String, Box<dyn Error>> {
     Ok(content)
 }
 fn main() {
-    let mut content = String::new();
-    match browse_wikipedia(String::from(
-        "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
-    )) {
-        Ok(t) => content = t,
-        Err(_) => {
-            println!("Oops");
-        }
-    }
+    // let mut content = String::new();
+    // match browse_wikipedia(String::from(
+    //     "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
+    // )) {
+    //     Ok(t) => content = t,
+    //     Err(_) => {
+    //         println!("Oops");
+    //     }
+    // }
 
     println!("Hello, world!");
-    // let response = reqwest::blocking::get(
-    //     "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
-    // )
-    // .unwrap();
+    let response = reqwest::blocking::get(
+        "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
+    )
+    .unwrap();
 
     // https://stackoverflow.com/questions/32674905/pass-string-to-function-taking-read-trait
-    let document = Document::from_read(content.as_bytes()).unwrap();
+    // let document = Document::from_read(content.as_bytes()).unwrap();
+    let document = Document::from_read(response).unwrap();
     let post = document.find(Class("post")).next().unwrap();
 
     for node in post.find(Name("img")) {
