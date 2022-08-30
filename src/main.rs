@@ -4,6 +4,8 @@ use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
 // use std::collections::HashMap;
 extern crate reqwest;
+// NOTE(okubo): 参考記事
+// https://github.com/kadekillary/scraping-with-rust/blob/master/src/main.rs
 
 fn main() {
     println!("Hello, world!");
