@@ -1,54 +1,67 @@
-// use scraper::Html;
-use std::error::Error;
+// use std::error::Error;
+// use std::io;
+// use std::fs::OpenOptions;
 
+// use std::fs::File;
+// use std::io::prelude::*;
+// use std::path::Path;
+//
 // use headless_chrome::protocol::cdp::Page;
-use headless_chrome::Browser;
+// use headless_chrome::Browser;
 use select::document::Document;
-use select::predicate::{Class, Name};
+use select::predicate::Class;
 // use std::collections::HashMap;
 extern crate reqwest;
 // NOTE(okubo): 参考記事
 // https://github.com/kadekillary/scraping-with-rust/blob/master/src/main.rs
 
-fn browse_wikipedia(url: String) -> Result<String, Box<dyn Error>> {
-    let browser = Browser::default()?;
-    let tab = browser.wait_for_initial_tab()?;
-    tab.navigate_to(&url)?;
-    tab.wait_until_navigated().unwrap();
+// note: 下記の構成を参考に実装する
+// note: https://github.com/catnose99/CatKnows/tree/master/content/blog
 
-    let mut content = String::new();
-    match tab.get_content() {
-        Ok(t) => content = t,
-        Err(e) => eprintln!("{}", e),
-    }
-    Ok(content)
-}
+// fn create_file(content: String) -> Result<(), String> {
+//     let path = Path::new("lorem_ipsum.md");
+//     let display = path.display();
+//
+//     // Open a file in write-only mode, returns `io::Result<File>`
+//     // ファイルを書き込み専用モードで開く。返り値は`io::Result<File>`
+//     let mut file = match File::create(&path) {
+//         Err(why) => panic!("couldn't create {}: {}", display, why),
+//         Ok(file) => file,
+//     };
+//
+//     // Write the `LOREM_IPSUM` string to `file`, returns `io::Result<()>`
+//     // `LOREM_IPSUM`の文字列を`file`に書き込む。返り値は`io::Result<()>`
+//     match file.write_all(content.as_bytes()) {
+//         Err(why) => panic!("couldn't write to {}: {}", display, why),
+//         Ok(_) => println!("successfully wrote to {}", display),
+//     }
+//     Ok(())
+// }
+
 fn main() {
-    // let mut content = String::new();
-    // match browse_wikipedia(String::from(
-    //     "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
-    // )) {
-    //     Ok(t) => content = t,
-    //     Err(_) => {
-    //         println!("Oops");
-    //     }
-    // }
-
-    println!("Hello, world!");
     let response = reqwest::blocking::get(
-        "https://mokubo.website/2022/08/how-to-create-your-own-vim-plugins/",
+        "https://mokubo.website/2022/08/how-to-issue-custom-queries-in-supabase-db/",
     )
     .unwrap();
 
-    // https://stackoverflow.com/questions/32674905/pass-string-to-function-taking-read-trait
-    // let document = Document::from_read(content.as_bytes()).unwrap();
     let document = Document::from_read(response).unwrap();
     let post = document.find(Class("post")).next().unwrap();
 
-    for node in post.find(Name("img")) {
-        // let url = node.find(Class("title").descendant(Name("a")));
-        // let images = node.find(Name("img")).next().unwrap();
+    let tags = post
+        .find(Class("entry-content"))
+        .map(|tag| tag.html())
+        .collect::<Vec<_>>();
 
-        println!("{}", node.attr("src").unwrap());
-    }
+    println!("Taggs:{}", tags.join(", "));
+
+    // for node in post.find(Class("entry-content")) {
+    //     let text = node.text();
+    //     println!("{}", text);
+    //     println!("------------");
+    //     // let url = node.find(Class("title").descendant(Name("a")));
+    //     // let images = node.find(Name("img")).next().unwrap();
+    //
+    //     // println!("{:?}", node.as_text());
+    //     // println!("{}", node.attr("src").unwrap());
+    // }
 }
