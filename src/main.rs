@@ -1,11 +1,11 @@
-// use std::error::Error;
-// use std::io;
-// use std::fs::OpenOptions;
+use std::error::Error;
+use std::fs::OpenOptions;
+use std::io;
 
-// use std::fs::File;
-// use std::io::prelude::*;
-// use std::path::Path;
-//
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
+
 // use headless_chrome::protocol::cdp::Page;
 // use headless_chrome::Browser;
 use select::document::Document;
@@ -18,25 +18,37 @@ extern crate reqwest;
 // note: 下記の構成を参考に実装する
 // note: https://github.com/catnose99/CatKnows/tree/master/content/blog
 
-// fn create_file(content: String) -> Result<(), String> {
-//     let path = Path::new("lorem_ipsum.md");
-//     let display = path.display();
-//
-//     // Open a file in write-only mode, returns `io::Result<File>`
-//     // ファイルを書き込み専用モードで開く。返り値は`io::Result<File>`
-//     let mut file = match File::create(&path) {
-//         Err(why) => panic!("couldn't create {}: {}", display, why),
-//         Ok(file) => file,
-//     };
-//
-//     // Write the `LOREM_IPSUM` string to `file`, returns `io::Result<()>`
-//     // `LOREM_IPSUM`の文字列を`file`に書き込む。返り値は`io::Result<()>`
-//     match file.write_all(content.as_bytes()) {
-//         Err(why) => panic!("couldn't write to {}: {}", display, why),
-//         Ok(_) => println!("successfully wrote to {}", display),
-//     }
-//     Ok(())
-// }
+fn create_file(content: String) -> Result<(), String> {
+    let path = Path::new("lorem_ipsum.md");
+    let display = path.display();
+
+    // Open a file in write-only mode, returns `io::Result<File>`
+    // ファイルを書き込み専用モードで開く。返り値は`io::Result<File>`
+    let mut file = match File::create(&path) {
+        Err(why) => panic!("couldn't create {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    // Write the `LOREM_IPSUM` string to `file`, returns `io::Result<()>`
+    // `LOREM_IPSUM`の文字列を`file`に書き込む。返り値は`io::Result<()>`
+    match file.write_all(content.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", display, why),
+        Ok(_) => println!("successfully wrote to {}", display),
+    }
+    Ok(())
+}
+
+// TODO(okubo): parserの作り方
+// https://betterprogramming.pub/create-your-own-markdown-parser-bffb392a06db
+// 上記はmarkdown to htmlしているので逆でいけそう
+// また方針としては[<h1>から始まり、</h1>で終わる]というような
+// 1行ずつ処理を行う、というので問題なさそう
+// 当然全部一気だと楽だけど、それだと正確に変換できないので、正確に変換することを
+// したいがために、1行ずつの実行とする
+// もしくは引数をListにして、複数でも良いし、単数でも、みたいな形でもいいかも
+
+// phpだけどこのOSSも参考になる
+// https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
 
 fn main() {
     let response = reqwest::blocking::get(
@@ -53,6 +65,12 @@ fn main() {
         .collect::<Vec<_>>();
 
     println!("Taggs:{}", tags.join(", "));
+    let contents = tags.join(", ");
+
+    match create_file(contents) {
+        Ok(_) => println!("success"),
+        Err(_) => eprintln!("error"),
+    };
 
     // for node in post.find(Class("entry-content")) {
     //     let text = node.text();
