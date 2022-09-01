@@ -11,3 +11,9 @@ tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.10.0-alpha.2", features = ["blocking"] }
 headless_chrome = {git = "https://github.com/atroche/rust-headless-chrome", features = ["fetch"]}
 select = "0.5"
+
+[dependencies.regex]
+version = "1.3"
+default-features = false
+# regex currently requires the standard library, you must re-enable it.
+features = ["std"]

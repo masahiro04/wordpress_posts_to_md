@@ -1,8 +1,9 @@
+use regex::Regex;
+
 use std::error::Error;
+use std::fs::File;
 use std::fs::OpenOptions;
 use std::io;
-
-use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
@@ -50,6 +51,12 @@ fn create_file(content: String) -> Result<(), String> {
 // phpだけどこのOSSも参考になる
 // https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
 
+fn filter_tag(html: String) {
+    let s = "hogehoge";
+    let re = Regex::new(r"^hoge").unwrap();
+    println!("{}", re.is_match(s));
+}
+
 fn main() {
     let response = reqwest::blocking::get(
         "https://mokubo.website/2022/08/how-to-issue-custom-queries-in-supabase-db/",
@@ -59,18 +66,32 @@ fn main() {
     let document = Document::from_read(response).unwrap();
     let post = document.find(Class("post")).next().unwrap();
 
+    // filter_tag(String::from("hoge"));
+
     let tags = post
         .find(Class("entry-content"))
-        .map(|tag| tag.html())
+        .map(|tag| {
+            let tag_ref = &tag;
+            println!("{}", &tag_ref.html());
+            let re = Regex::new(r"<h2>(.*?)</h2>").unwrap();
+            let is_matched = re.is_match(&tag_ref.html());
+            println!("{}", re.is_match(&tag_ref.html()));
+
+            // tag.html()
+            is_matched.to_string()
+            // String::from("hogehgoe")
+        })
         .collect::<Vec<_>>();
 
+    // TODO: tagsが一つでまとまってしまっているので、loopの段階で切り分ける
+    // もしダメならregexでもいいかも
+    println!("Tag size is: {}", tags.len().to_string());
     println!("Taggs:{}", tags.join(", "));
-    let contents = tags.join(", ");
-
-    match create_file(contents) {
-        Ok(_) => println!("success"),
-        Err(_) => eprintln!("error"),
-    };
+    // let contents = tags.join(", ");
+    // match create_file(contents) {
+    //     Ok(_) => println!("success"),
+    //     Err(_) => eprintln!("error"),
+    // };
 
     // for node in post.find(Class("entry-content")) {
     //     let text = node.text();
