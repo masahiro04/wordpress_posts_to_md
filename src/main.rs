@@ -57,6 +57,17 @@ fn filter_tag(html: String) {
     println!("{}", re.is_match(s));
 }
 
+fn trim_newline(s: &mut String) -> &mut String {
+    loop {
+        if s.ends_with('\n') {
+            s.pop();
+        } else {
+            break;
+        }
+    }
+    s
+}
+
 fn main() {
     let response = reqwest::blocking::get(
         "https://mokubo.website/2022/08/how-to-issue-custom-queries-in-supabase-db/",
@@ -81,7 +92,10 @@ fn main() {
             let is_matched = re.is_match(&tag_ref.html());
             println!("{}", re.is_match(&tag_ref.html()));
 
-            tag.html()
+            let mut html = tag.html();
+            trim_newline(&mut html);
+            html
+
             // is_matched.to_string()
             // String::from("hogehgoe")
         })
@@ -89,13 +103,14 @@ fn main() {
 
     // TODO: tagsが一つでまとまってしまっているので、loopの段階で切り分ける
     // もしダメならregexでもいいかも
+    let content = children.join("\n");
     println!("Tag size is: {}", children.len().to_string());
-    println!("Taggs:{}", children.join(", "));
-    // let contents = tags.join(", ");
-    // match create_file(contents) {
-    //     Ok(_) => println!("success"),
-    //     Err(_) => eprintln!("error"),
-    // };
+    // println!("Taggs:{}", children.join(", "));
+    // let contents = children.join(", ");
+    match create_file(content) {
+        Ok(_) => println!("success"),
+        Err(_) => eprintln!("error"),
+    };
 
     // for node in post.find(Class("entry-content")) {
     //     let text = node.text();
