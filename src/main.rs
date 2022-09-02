@@ -10,6 +10,8 @@ use std::path::Path;
 // use headless_chrome::protocol::cdp::Page;
 // use headless_chrome::Browser;
 use select::document::Document;
+
+use select::node::Node;
 use select::predicate::Class;
 // use std::collections::HashMap;
 extern crate reqwest;
@@ -51,21 +53,59 @@ fn create_file(content: String) -> Result<(), String> {
 // phpだけどこのOSSも参考になる
 // https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
 
-fn filter_tag(html: String) {
-    let s = "hogehoge";
-    let re = Regex::new(r"^hoge").unwrap();
-    println!("{}", re.is_match(s));
+struct Rule {
+    rule: String,
+    format: String,
 }
 
-fn trim_newline(s: &mut String) -> &mut String {
+fn unused_tag(s: String) -> String {
+    let mut trimed_string = String::from(&s);
+    println!("before string: {}", s);
+    let re = Regex::new(&r"<p(?: .+?)?>|</p>|<pre(?: .+?)?>|</pre>|<figure(?: .+?)?>|</figure>")
+        .unwrap();
+    trimed_string = re.replace_all(&trimed_string, "").to_string();
+    println!("after string: {}", trimed_string);
+    trimed_string.to_string()
+}
+fn trim_newline(s: String) -> String {
+    let mut base_string = s;
     loop {
-        if s.ends_with('\n') {
-            s.pop();
+        if base_string.ends_with('\n') {
+            base_string.pop();
         } else {
             break;
         }
     }
-    s
+
+    base_string = unused_tag(base_string);
+    base_string
+}
+
+fn html_to_markdown(node: Node) -> String {
+    let rules = vec![
+        Rule {
+            rule: String::from(r"<h2(?: .+?)?>.*?</h2>"),
+            format: format!("##{}", node.text()),
+        },
+        // Rule {
+        //     rule: String::from(r"<p(?: .+?)?>.*?</p>"),
+        //     format: format!("{}", node.text()),
+        // },
+    ];
+
+    let trimed_html = trim_newline(node.html());
+    let mut parsed_string = String::new();
+    for rule in rules {
+        let re = Regex::new(&rule.rule).unwrap();
+        let is_matched = re.is_match(&trimed_html);
+        if is_matched {
+            parsed_string = rule.format;
+        }
+    }
+    if parsed_string.is_empty() {
+        return trimed_html;
+    }
+    parsed_string
 }
 
 fn main() {
@@ -73,32 +113,12 @@ fn main() {
         "https://mokubo.website/2022/08/how-to-issue-custom-queries-in-supabase-db/",
     )
     .unwrap();
-
     let document = Document::from_read(response).unwrap();
     let post = document.find(Class("post")).next().unwrap();
-
-    // filter_tag(String::from("hoge"));
-
     let tags = post.find(Class("entry-content")).next().unwrap();
-
     let children = tags
         .children()
-        .map(|tag| {
-            // note: 正規表現の参考リンク
-            // https://webdesign.vdlz.xyz/Editor/hidemaru/Regex/WebSiteRegex.html
-            let tag_ref = &tag;
-            println!("{}", &tag_ref.html());
-            let re = Regex::new(r"<h2>(.*?)</h2>").unwrap();
-            let is_matched = re.is_match(&tag_ref.html());
-            println!("{}", re.is_match(&tag_ref.html()));
-
-            let mut html = tag.html();
-            trim_newline(&mut html);
-            html
-
-            // is_matched.to_string()
-            // String::from("hogehgoe")
-        })
+        .map(|tag| html_to_markdown(tag))
         .collect::<Vec<_>>();
 
     // TODO: tagsが一つでまとまってしまっているので、loopの段階で切り分ける
@@ -111,15 +131,4 @@ fn main() {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
     };
-
-    // for node in post.find(Class("entry-content")) {
-    //     let text = node.text();
-    //     println!("{}", text);
-    //     println!("------------");
-    //     // let url = node.find(Class("title").descendant(Name("a")));
-    //     // let images = node.find(Name("img")).next().unwrap();
-    //
-    //     // println!("{:?}", node.as_text());
-    //     // println!("{}", node.attr("src").unwrap());
-    // }
 }
