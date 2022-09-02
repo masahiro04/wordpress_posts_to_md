@@ -68,25 +68,29 @@ fn main() {
 
     // filter_tag(String::from("hoge"));
 
-    let tags = post
-        .find(Class("entry-content"))
+    let tags = post.find(Class("entry-content")).next().unwrap();
+
+    let children = tags
+        .children()
         .map(|tag| {
+            // note: 正規表現の参考リンク
+            // https://webdesign.vdlz.xyz/Editor/hidemaru/Regex/WebSiteRegex.html
             let tag_ref = &tag;
             println!("{}", &tag_ref.html());
             let re = Regex::new(r"<h2>(.*?)</h2>").unwrap();
             let is_matched = re.is_match(&tag_ref.html());
             println!("{}", re.is_match(&tag_ref.html()));
 
-            // tag.html()
-            is_matched.to_string()
+            tag.html()
+            // is_matched.to_string()
             // String::from("hogehgoe")
         })
         .collect::<Vec<_>>();
 
     // TODO: tagsが一つでまとまってしまっているので、loopの段階で切り分ける
     // もしダメならregexでもいいかも
-    println!("Tag size is: {}", tags.len().to_string());
-    println!("Taggs:{}", tags.join(", "));
+    println!("Tag size is: {}", children.len().to_string());
+    println!("Taggs:{}", children.join(", "));
     // let contents = tags.join(", ");
     // match create_file(contents) {
     //     Ok(_) => println!("success"),
