@@ -12,7 +12,7 @@ use std::path::Path;
 use select::document::Document;
 
 use select::node::Node;
-use select::predicate::Class;
+use select::predicate::{Attr, Class, Name, Predicate};
 // use std::collections::HashMap;
 extern crate reqwest;
 // NOTE(okubo): 参考記事
@@ -53,93 +53,128 @@ fn create_file(content: String) -> Result<(), String> {
 // phpだけどこのOSSも参考になる
 // https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
 
-enum RuleType {
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    // Ptag,
-    Atag,
-}
+// enum RuleType {
+//     H1,
+//     H2,
+//     H3,
+//     H4,
+//     H5,
+//     H6,
+//     // Ptag,
+//     Atag,
+// }
 
-struct Rule {
-    rule: String,
-    rule_type: RuleType,
-    format: String,
-}
+// struct Rule {
+//     rule: String,
+//     rule_type: RuleType,
+//     format: String,
+// }
 
-impl Rule {
-    fn parse_string(&self, node: Node) -> String {
-        let trimed_html = trim_newline(node.html());
-        let mut parsed_string = match &self.rule_type {
-            RuleType::H1 => {
-                let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            RuleType::H2 => {
-                let re = String::from(r"<h2(?: .+?)?>.*?</h2>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            RuleType::H3 => {
-                let re = String::from(r"<h3(?: .+?)?>.*?</h3>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            RuleType::H4 => {
-                let re = String::from(r"<h4(?: .+?)?>.*?</h4>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            RuleType::H5 => {
-                let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            RuleType::H6 => {
-                let re = String::from(r"<h6(?: .+?)?>.*?</h6>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("#{}", node.text())
-            }
-            // RuleType::Ptag => String::from(""),
-            RuleType::Atag => {
-                let re = String::from(r"<a(?: .+?)?>.*?</a>");
-                let re = Regex::new(&re).unwrap();
-                let is_matched = re.is_match(&trimed_html);
-                format!("{}", node.attr("href").unwrap())
-            }
-        };
-        parsed_string
-    }
+// impl Rule {
+//     fn parse_string(&self, node: Node) -> String {
+//         let trimed_html = trim_newline(node.html());
+//         let mut parsed_string = match &self.rule_type {
+//             RuleType::H1 => {
+//                 let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             RuleType::H2 => {
+//                 let re = String::from(r"<h2(?: .+?)?>.*?</h2>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             RuleType::H3 => {
+//                 let re = String::from(r"<h3(?: .+?)?>.*?</h3>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             RuleType::H4 => {
+//                 let re = String::from(r"<h4(?: .+?)?>.*?</h4>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             RuleType::H5 => {
+//                 let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             RuleType::H6 => {
+//                 let re = String::from(r"<h6(?: .+?)?>.*?</h6>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("#{}", node.text())
+//             }
+//             // RuleType::Ptag => String::from(""),
+//             RuleType::Atag => {
+//                 let re = String::from(r"<a(?: .+?)?>.*?</a>");
+//                 let re = Regex::new(&re).unwrap();
+//                 let is_matched = re.is_match(&trimed_html);
+//                 format!("{}", node.attr("href").unwrap())
+//             }
+//         };
+//         parsed_string
+//     }
+// }
+
+fn make_header_regex(n: i32) -> String {
+    format!(r"<h{}(?: .+?)?>.*?</h{}>", n, n)
 }
 
 fn parse_text(node: Node) -> String {
     let trimed_html = trim_newline(node.html());
-    let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
-    if Regex::new(&r"<h1(?: .+?)?>.*?</h1>")
+    // let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
+    if Regex::new(&make_header_regex(1))
         .unwrap()
         .is_match(&trimed_html)
     {
         return format!("#{}", node.text());
-    } else if Regex::new(&r"<h2(?: .+?)?>.*?</h2>")
+    } else if Regex::new(&make_header_regex(2))
         .unwrap()
         .is_match(&trimed_html)
     {
         return format!("##{}", node.text());
-    } else if Regex::new(&r"<h2(?: .+?)?>.*?</h2>")
+    } else if Regex::new(&make_header_regex(3))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("##{}", node.text());
+        return format!("###{}", node.text());
+    } else if Regex::new(&make_header_regex(4))
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("####{}", node.text());
+    } else if Regex::new(&make_header_regex(5))
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("#####{}", node.text());
+    } else if Regex::new(&make_header_regex(6))
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("######{}", node.text());
+    } else if Regex::new(&r"<a(?: .+?)?>.*?</a>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        // let href = node.attr("href").unwrap();
+        let atag = node.find(Name("a")).next().unwrap();
+        println!("a tag i ::::{}", atag.text());
+        let empty_text = String::from("");
+        let href = atag.attr("href");
+        let href = match href {
+            Some(result) => result,
+            None => &empty_text,
+        };
+
+        println!("href is :{}", href);
+        return format!("[{}]({})", node.text(), href);
     }
 
     format!("{}", trimed_html)
