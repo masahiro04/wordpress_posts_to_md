@@ -7,8 +7,6 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
-// use headless_chrome::protocol::cdp::Page;
-// use headless_chrome::Browser;
 use select::document::Document;
 
 use select::node::Node;
@@ -40,87 +38,6 @@ fn create_file(content: String) -> Result<(), String> {
     }
     Ok(())
 }
-
-// TODO(okubo): parserの作り方
-// https://betterprogramming.pub/create-your-own-markdown-parser-bffb392a06db
-// 上記はmarkdown to htmlしているので逆でいけそう
-// また方針としては[<h1>から始まり、</h1>で終わる]というような
-// 1行ずつ処理を行う、というので問題なさそう
-// 当然全部一気だと楽だけど、それだと正確に変換できないので、正確に変換することを
-// したいがために、1行ずつの実行とする
-// もしくは引数をListにして、複数でも良いし、単数でも、みたいな形でもいいかも
-
-// phpだけどこのOSSも参考になる
-// https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
-
-// enum RuleType {
-//     H1,
-//     H2,
-//     H3,
-//     H4,
-//     H5,
-//     H6,
-//     // Ptag,
-//     Atag,
-// }
-
-// struct Rule {
-//     rule: String,
-//     rule_type: RuleType,
-//     format: String,
-// }
-
-// impl Rule {
-//     fn parse_string(&self, node: Node) -> String {
-//         let trimed_html = trim_newline(node.html());
-//         let mut parsed_string = match &self.rule_type {
-//             RuleType::H1 => {
-//                 let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             RuleType::H2 => {
-//                 let re = String::from(r"<h2(?: .+?)?>.*?</h2>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             RuleType::H3 => {
-//                 let re = String::from(r"<h3(?: .+?)?>.*?</h3>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             RuleType::H4 => {
-//                 let re = String::from(r"<h4(?: .+?)?>.*?</h4>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             RuleType::H5 => {
-//                 let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             RuleType::H6 => {
-//                 let re = String::from(r"<h6(?: .+?)?>.*?</h6>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("#{}", node.text())
-//             }
-//             // RuleType::Ptag => String::from(""),
-//             RuleType::Atag => {
-//                 let re = String::from(r"<a(?: .+?)?>.*?</a>");
-//                 let re = Regex::new(&re).unwrap();
-//                 let is_matched = re.is_match(&trimed_html);
-//                 format!("{}", node.attr("href").unwrap())
-//             }
-//         };
-//         parsed_string
-//     }
-// }
 
 fn make_header_regex(n: i32) -> String {
     format!(r"<h{}(?: .+?)?>.*?</h{}>", n, n)
@@ -163,9 +80,7 @@ fn parse_text(node: Node) -> String {
         .unwrap()
         .is_match(&trimed_html)
     {
-        // let href = node.attr("href").unwrap();
         let atag = node.find(Name("a")).next().unwrap();
-        println!("a tag i ::::{}", atag.text());
         let empty_text = String::from("");
         let href = atag.attr("href");
         let href = match href {
@@ -173,16 +88,28 @@ fn parse_text(node: Node) -> String {
             None => &empty_text,
         };
 
-        println!("href is :{}", href);
         return format!("[{}]({})", node.text(), href);
+        // NOTE(okubo): codeの中は改行も許可
+    } else if Regex::new(&r"<code(?: .+?)?>\n|\r\n|\r|.*?</code>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        let code = node.find(Name("code")).next().unwrap();
+        let empty_text = String::from("");
+        let lang = match code.attr("lang") {
+            Some(result) => result,
+            None => &empty_text,
+        };
+        return format!("```{}\n {}\n```", lang, node.text());
     }
+    // TODO(okubo): 画像の機能を追加する
 
     format!("{}", trimed_html)
 }
 
 fn unused_tag(s: String) -> String {
     let mut trimed_string = String::from(&s);
-    let re = Regex::new(&r"<p(?: .+?)?>|</p>|<pre(?: .+?)?>|</pre>|<figure(?: .+?)?>|</figure>")
+    let re = Regex::new(&r"<p(?: .+?)?>|</p>|<pre(?: .+?)?>|</pre>|<figure(?: .+?)?>|</figure>|<pre(?: .+?)?>|</pre>")
         .unwrap();
     trimed_string = re.replace_all(&trimed_string, "").to_string();
     trimed_string.to_string()
@@ -201,71 +128,6 @@ fn trim_newline(s: String) -> String {
     base_string
 }
 
-// fn html_to_markdown(node: Node) -> String {
-//     let re = Regex::new(&re).unwrap();
-//     let is_matched = re.is_match(&trimed_html);
-//
-//     if let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
-//
-//
-//     // let rules = vec![
-//     //     Rule {
-//     //         rule: String::from(r"<h1(?: .+?)?>.*?</h1>"),
-//     //         rule_type: RuleType::H1,
-//     //         format: format!("#{}", node.text()),
-//     //     },
-//     //     Rule {
-//     //         rule: String::from(r"<h2(?: .+?)?>.*?</h2>"),
-//     //         rule_type: RuleType::H2,
-//     //         format: format!("##{}", node.text()),
-//     //     },
-//     //     Rule {
-//     //         rule: String::from(r"<h3(?: .+?)?>.*?</h3>"),
-//     //         rule_type: RuleType::H3,
-//     //         format: format!("###{}", node.text()),
-//     //     },
-//     //     Rule {
-//     //         rule: String::from(r"<h4(?: .+?)?>.*?</h4>"),
-//     //         rule_type: RuleType::H4,
-//     //         format: format!("####{}", node.text()),
-//     //     },
-//     //     Rule {
-//     //         rule: String::from(r"<h5(?: .+?)?>.*?</h5>"),
-//     //         rule_type: RuleType::H5,
-//     //         format: format!("#####{}", node.text()),
-//     //     },
-//     //     Rule {
-//     //         rule: String::from(r"<h6(?: .+?)?>.*?</h6>"),
-//     //         rule_type: RuleType::H6,
-//     //         format: format!("######{}", node.text()),
-//     //     },
-//     //     // Rule {
-//     //     //     rule: String::from(r"<p(?: .+?)?>.*?</p>"),
-//     //     //     rule_type: RuleType::Ptag,
-//     //     //     format: format!("{}", node.text()),
-//     //     // },
-//     //     Rule {
-//     //         rule: String::from(r"<a(?: .+?)?>.*?</a>"),
-//     //         rule_type: RuleType::Atag,
-//     //         format: format!("######{}", node.text()),
-//     //     },
-//     // ];
-//
-//     let trimed_html = trim_newline(node.html());
-//     let mut parsed_string = String::new();
-//     for rule in rules {
-//         let re = Regex::new(&rule.rule).unwrap();
-//         let is_matched = re.is_match(&trimed_html);
-//         if is_matched {
-//             parsed_string = rule.format;
-//         }
-//     }
-//     if parsed_string.is_empty() {
-//         return trimed_html;
-//     }
-//     parsed_string
-// }
-
 fn main() {
     let response = reqwest::blocking::get(
         "https://mokubo.website/2022/08/how-to-issue-custom-queries-in-supabase-db/",
@@ -276,6 +138,7 @@ fn main() {
     let tags = post.find(Class("entry-content")).next().unwrap();
     let children = tags
         .children()
+        // TODO(okubo): parse_textの先頭にtitle description, created_atも入れる
         .map(|tag| parse_text(tag))
         .collect::<Vec<_>>();
 
