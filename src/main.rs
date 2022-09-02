@@ -53,18 +53,103 @@ fn create_file(content: String) -> Result<(), String> {
 // phpだけどこのOSSも参考になる
 // https://github.com/thephpleague/html-to-markdown/blob/master/src/Element.php
 
+enum RuleType {
+    H1,
+    H2,
+    H3,
+    H4,
+    H5,
+    H6,
+    // Ptag,
+    Atag,
+}
+
 struct Rule {
     rule: String,
+    rule_type: RuleType,
     format: String,
+}
+
+impl Rule {
+    fn parse_string(&self, node: Node) -> String {
+        let trimed_html = trim_newline(node.html());
+        let mut parsed_string = match &self.rule_type {
+            RuleType::H1 => {
+                let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            RuleType::H2 => {
+                let re = String::from(r"<h2(?: .+?)?>.*?</h2>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            RuleType::H3 => {
+                let re = String::from(r"<h3(?: .+?)?>.*?</h3>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            RuleType::H4 => {
+                let re = String::from(r"<h4(?: .+?)?>.*?</h4>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            RuleType::H5 => {
+                let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            RuleType::H6 => {
+                let re = String::from(r"<h6(?: .+?)?>.*?</h6>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("#{}", node.text())
+            }
+            // RuleType::Ptag => String::from(""),
+            RuleType::Atag => {
+                let re = String::from(r"<a(?: .+?)?>.*?</a>");
+                let re = Regex::new(&re).unwrap();
+                let is_matched = re.is_match(&trimed_html);
+                format!("{}", node.attr("href").unwrap())
+            }
+        };
+        parsed_string
+    }
+}
+
+fn parse_text(node: Node) -> String {
+    let trimed_html = trim_newline(node.html());
+    let re = String::from(r"<h5(?: .+?)?>.*?</h5>");
+    if Regex::new(&r"<h1(?: .+?)?>.*?</h1>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("#{}", node.text());
+    } else if Regex::new(&r"<h2(?: .+?)?>.*?</h2>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("##{}", node.text());
+    } else if Regex::new(&r"<h2(?: .+?)?>.*?</h2>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        return format!("##{}", node.text());
+    }
+
+    format!("{}", trimed_html)
 }
 
 fn unused_tag(s: String) -> String {
     let mut trimed_string = String::from(&s);
-    println!("before string: {}", s);
     let re = Regex::new(&r"<p(?: .+?)?>|</p>|<pre(?: .+?)?>|</pre>|<figure(?: .+?)?>|</figure>")
         .unwrap();
     trimed_string = re.replace_all(&trimed_string, "").to_string();
-    println!("after string: {}", trimed_string);
     trimed_string.to_string()
 }
 fn trim_newline(s: String) -> String {
@@ -81,32 +166,70 @@ fn trim_newline(s: String) -> String {
     base_string
 }
 
-fn html_to_markdown(node: Node) -> String {
-    let rules = vec![
-        Rule {
-            rule: String::from(r"<h2(?: .+?)?>.*?</h2>"),
-            format: format!("##{}", node.text()),
-        },
-        // Rule {
-        //     rule: String::from(r"<p(?: .+?)?>.*?</p>"),
-        //     format: format!("{}", node.text()),
-        // },
-    ];
-
-    let trimed_html = trim_newline(node.html());
-    let mut parsed_string = String::new();
-    for rule in rules {
-        let re = Regex::new(&rule.rule).unwrap();
-        let is_matched = re.is_match(&trimed_html);
-        if is_matched {
-            parsed_string = rule.format;
-        }
-    }
-    if parsed_string.is_empty() {
-        return trimed_html;
-    }
-    parsed_string
-}
+// fn html_to_markdown(node: Node) -> String {
+//     let re = Regex::new(&re).unwrap();
+//     let is_matched = re.is_match(&trimed_html);
+//
+//     if let re = String::from(r"<h1(?: .+?)?>.*?</h1>");
+//
+//
+//     // let rules = vec![
+//     //     Rule {
+//     //         rule: String::from(r"<h1(?: .+?)?>.*?</h1>"),
+//     //         rule_type: RuleType::H1,
+//     //         format: format!("#{}", node.text()),
+//     //     },
+//     //     Rule {
+//     //         rule: String::from(r"<h2(?: .+?)?>.*?</h2>"),
+//     //         rule_type: RuleType::H2,
+//     //         format: format!("##{}", node.text()),
+//     //     },
+//     //     Rule {
+//     //         rule: String::from(r"<h3(?: .+?)?>.*?</h3>"),
+//     //         rule_type: RuleType::H3,
+//     //         format: format!("###{}", node.text()),
+//     //     },
+//     //     Rule {
+//     //         rule: String::from(r"<h4(?: .+?)?>.*?</h4>"),
+//     //         rule_type: RuleType::H4,
+//     //         format: format!("####{}", node.text()),
+//     //     },
+//     //     Rule {
+//     //         rule: String::from(r"<h5(?: .+?)?>.*?</h5>"),
+//     //         rule_type: RuleType::H5,
+//     //         format: format!("#####{}", node.text()),
+//     //     },
+//     //     Rule {
+//     //         rule: String::from(r"<h6(?: .+?)?>.*?</h6>"),
+//     //         rule_type: RuleType::H6,
+//     //         format: format!("######{}", node.text()),
+//     //     },
+//     //     // Rule {
+//     //     //     rule: String::from(r"<p(?: .+?)?>.*?</p>"),
+//     //     //     rule_type: RuleType::Ptag,
+//     //     //     format: format!("{}", node.text()),
+//     //     // },
+//     //     Rule {
+//     //         rule: String::from(r"<a(?: .+?)?>.*?</a>"),
+//     //         rule_type: RuleType::Atag,
+//     //         format: format!("######{}", node.text()),
+//     //     },
+//     // ];
+//
+//     let trimed_html = trim_newline(node.html());
+//     let mut parsed_string = String::new();
+//     for rule in rules {
+//         let re = Regex::new(&rule.rule).unwrap();
+//         let is_matched = re.is_match(&trimed_html);
+//         if is_matched {
+//             parsed_string = rule.format;
+//         }
+//     }
+//     if parsed_string.is_empty() {
+//         return trimed_html;
+//     }
+//     parsed_string
+// }
 
 fn main() {
     let response = reqwest::blocking::get(
@@ -118,15 +241,11 @@ fn main() {
     let tags = post.find(Class("entry-content")).next().unwrap();
     let children = tags
         .children()
-        .map(|tag| html_to_markdown(tag))
+        .map(|tag| parse_text(tag))
         .collect::<Vec<_>>();
 
-    // TODO: tagsが一つでまとまってしまっているので、loopの段階で切り分ける
-    // もしダメならregexでもいいかも
     let content = children.join("\n");
     println!("Tag size is: {}", children.len().to_string());
-    // println!("Taggs:{}", children.join(", "));
-    // let contents = children.join(", ");
     match create_file(content) {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
