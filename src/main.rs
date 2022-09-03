@@ -125,15 +125,10 @@ fn parse_text(node: Node) -> String {
             .copy_to(&mut file)
             .unwrap();
 
-        // let mut file = File::create(file_name);
-        // let file_len = reqwest::blocking::get(src)
-        //     .unwrap()
-        //     .copy_to(&mut file)
-        //     .unwrap();
         println!("image src is :{}", src);
         println!("file name is :{}", file_name);
         println!("extension  is :{}", extension);
-        // return format!("```{}\n {}\n```", lang, node.text());
+        return format!("![GitHubでリビジョン管理](./{})", file_name);
     }
 
     // TODO(okubo): 画像の機能を追加する
