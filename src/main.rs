@@ -1,8 +1,8 @@
 use regex::Regex;
 
-use std::error::Error;
+// use std::error::Error;
 use std::fs::File;
-use std::fs::OpenOptions;
+// use std::fs::OpenOptions;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -10,7 +10,7 @@ use std::path::Path;
 use select::document::Document;
 
 use select::node::Node;
-use select::predicate::{Attr, Class, Name, Predicate};
+use select::predicate::{Class, Name};
 // use std::collections::HashMap;
 extern crate reqwest;
 // NOTE(okubo): 参考記事
@@ -101,7 +101,41 @@ fn parse_text(node: Node) -> String {
             None => &empty_text,
         };
         return format!("```{}\n {}\n```", lang, node.text());
+    } else if Regex::new(&r"<img(?: .+?)?>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        println!("img tag haittayo!!!!!!!!!!!!;");
+        let img = node.find(Name("img")).next().unwrap();
+        let empty_text = String::from("");
+        let src = match img.attr("src") {
+            Some(result) => result,
+            None => &empty_text,
+        };
+
+        let splited_image_url: Vec<String> = src.split("/").map(|s| s.to_string()).collect();
+        let file_name = splited_image_url.last().unwrap();
+        let splited_file_name: Vec<String> = file_name.split(".").map(|s| s.to_string()).collect();
+        let extension = splited_file_name.last().unwrap();
+
+        // NOTE(okubo): 画像保存機能
+        let mut file = File::create(file_name).unwrap();
+        let response = reqwest::blocking::get(src)
+            .unwrap()
+            .copy_to(&mut file)
+            .unwrap();
+
+        // let mut file = File::create(file_name);
+        // let file_len = reqwest::blocking::get(src)
+        //     .unwrap()
+        //     .copy_to(&mut file)
+        //     .unwrap();
+        println!("image src is :{}", src);
+        println!("file name is :{}", file_name);
+        println!("extension  is :{}", extension);
+        // return format!("```{}\n {}\n```", lang, node.text());
     }
+
     // TODO(okubo): 画像の機能を追加する
 
     format!("{}", trimed_html)
