@@ -50,32 +50,32 @@ fn parse_text(node: Node) -> String {
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("#{}", node.text());
+        return format!("# {}", node.text());
     } else if Regex::new(&make_header_regex(2))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("##{}", node.text());
+        return format!("## {}", node.text());
     } else if Regex::new(&make_header_regex(3))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("###{}", node.text());
+        return format!("### {}", node.text());
     } else if Regex::new(&make_header_regex(4))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("####{}", node.text());
+        return format!("#### {}", node.text());
     } else if Regex::new(&make_header_regex(5))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("#####{}", node.text());
+        return format!("##### {}", node.text());
     } else if Regex::new(&make_header_regex(6))
         .unwrap()
         .is_match(&trimed_html)
     {
-        return format!("######{}", node.text());
+        return format!("###### {}", node.text());
     } else if Regex::new(&r"<a(?: .+?)?>.*?</a>")
         .unwrap()
         .is_match(&trimed_html)
