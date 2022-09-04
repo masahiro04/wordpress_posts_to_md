@@ -81,13 +81,13 @@ pub fn parse_text(node: Node) -> String {
         // let extension = splited_file_name.last().unwrap();
 
         // NOTE(okubo): 画像保存機能
-        let mut file = File::create(file_name).unwrap();
-        reqwest::blocking::get(src)
-            .unwrap()
-            .copy_to(&mut file)
-            .unwrap();
+        // let mut file = File::create(file_name).unwrap();
+        // reqwest::blocking::get(src)
+        //     .unwrap()
+        //     .copy_to(&mut file)
+        //     .unwrap();
 
-        return format!("![GitHubでリビジョン管理](./{})", file_name);
+        // return format!("![GitHubでリビジョン管理](./{})", file_name);
     }
 
     format!("{}", trimed_html)
