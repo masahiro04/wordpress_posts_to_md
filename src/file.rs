@@ -1,9 +1,12 @@
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-
-pub fn create_file(content: String) -> Result<(), String> {
-    let path = Path::new("lorem_ipsum.md");
+pub fn create_file(slug: String, content: String) -> Result<(), String> {
+    // TODO(okubo): unwrapではなくerror handlingしたほうが良い
+    // fs::create_dir_all(format!("./posts/{}", slug)).unwrap();
+    let dir = format!("./posts/{}/index.md", slug);
+    let path = Path::new(&dir);
     let display = path.display();
 
     // Open a file in write-only mode, returns `io::Result<File>`

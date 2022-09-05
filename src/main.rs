@@ -2,6 +2,7 @@ use select::document::Document;
 use select::predicate::Class;
 
 use serde::Deserialize;
+use std::fs;
 // use std::future::Future;
 extern crate reqwest;
 
@@ -15,7 +16,6 @@ struct Rendered {
 
 #[derive(Debug, Deserialize)]
 struct Post {
-    // #[serde(rename = "id")]
     id: i32,
     date: String,
     date_gmt: String,
@@ -45,6 +45,10 @@ async fn main() -> Result<(), reqwest::Error> {
         .json()
         .await?;
 
+    // NOTE(okubo): 管理しやすいように上の階層で対応
+    // TODO(okubo): unwrapではなくerror handlingしたほうが良い
+    fs::create_dir_all(format!("./posts/{}", &post.slug)).unwrap();
+
     // NOTE(okubo): HTMLを扱うためのhack
     let modified_content = format!("<div class='post'>{}</div>", post.content.rendered);
     let document = Document::from_read(modified_content.as_bytes()).unwrap();
@@ -56,9 +60,9 @@ async fn main() -> Result<(), reqwest::Error> {
         .map(|node| text::parse_text(node))
         .collect::<Vec<_>>();
 
+    // NOTE(okubo): 画像を保存
     for section in sections.clone() {
-        println!("aaaa");
-        match section.download_image().await {
+        match section.download_image(&post.slug).await {
             Ok(_) => println!("created file"),
             Err(_) => eprintln!("failured"),
         };
@@ -69,7 +73,7 @@ async fn main() -> Result<(), reqwest::Error> {
         .map(|section| section.content)
         .collect::<Vec<_>>();
 
-    match file::create_file(section_string.join("\n")) {
+    match file::create_file(post.slug, section_string.join("\n")) {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
     };

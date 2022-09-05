@@ -25,10 +25,11 @@ pub struct Section {
 
 impl Section {
     // TODO(okubo): 可能なら、kindがimageの時だけ、みたいな実装が良さそう
-    pub async fn download_image(&self) -> Result<(), reqwest::Error> {
+    pub async fn download_image(&self, slug: &String) -> Result<(), reqwest::Error> {
         println!("download_image haitta!!!!");
         if let SectionKind::Image(file_name, src) = &self.kind {
-            let mut file = File::create(file_name).unwrap();
+            let path = format!("./posts/{}/{}", slug, file_name);
+            let mut file = File::create(path).unwrap();
             let image_string: String = reqwest::Client::new().get(src).send().await?.text().await?;
             match std::io::copy(&mut image_string.as_bytes(), &mut file) {
                 Ok(_) => println!(""),
