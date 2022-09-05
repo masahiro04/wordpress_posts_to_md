@@ -2,6 +2,7 @@ use select::document::Document;
 use select::predicate::Class;
 
 use serde::Deserialize;
+// use std::future::Future;
 extern crate reqwest;
 
 mod file;
@@ -42,30 +43,23 @@ async fn main() -> Result<(), reqwest::Error> {
         .send()
         .await?
         .json()
-        // .text()
         .await?;
 
     // NOTE(okubo): HTMLを扱うためのhack
     let modified_content = format!("<div class='post'>{}</div>", post.content.rendered);
-    // println!("{:#?}", post);
     let document = Document::from_read(modified_content.as_bytes()).unwrap();
     let html = document.find(Class("post")).next().unwrap();
-    // let title = document.find(Class("entry-title")).next().unwrap().text();
-    // println!("html is: {}", html.html());
-    // let title = document.find(Class("entry-title")).next().unwrap().text();
-    // println!("title is: {}", title);
 
-    // let elements = post.find(Class("entry-content")).next().unwrap();
-    let children = html
+    // TODO(okubo): parse_textの先頭にtitle description, created_atも入れる
+    let sections = html
         .children()
-        // .nodes
-        // TODO(okubo): parse_textの先頭にtitle description, created_atも入れる
-        .map(|tag| text::parse_text(tag))
+        .map(|node| {
+            let section = text::parse_text(node);
+            section.content
+        })
         .collect::<Vec<_>>();
-    //
-    let content = children.join("\n");
-    println!("Tag size is: {}", children.len().to_string());
-    match file::create_file(content) {
+
+    match file::create_file(sections.join("\n")) {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
     };

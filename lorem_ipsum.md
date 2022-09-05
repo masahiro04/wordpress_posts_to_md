@@ -79,7 +79,7 @@ $$;
  final answersRequest = client.from('hogehuga').select('*').execute();
 ```
 
-<img loading="lazy" width="921" height="122" src="https://mokubo.website/wp-content/uploads/2022/08/Screen-Shot-2022-08-02-at-14.31.27.png" alt="" class="wp-image-4847" srcset="https://mokubo.website/wp-content/uploads/2022/08/Screen-Shot-2022-08-02-at-14.31.27.png 921w, https://mokubo.website/wp-content/uploads/2022/08/Screen-Shot-2022-08-02-at-14.31.27-300x40.png 300w, https://mokubo.website/wp-content/uploads/2022/08/Screen-Shot-2022-08-02-at-14.31.27-644x85.png 644w, https://mokubo.website/wp-content/uploads/2022/08/Screen-Shot-2022-08-02-at-14.31.27-768x102.png 768w" sizes="(max-width: 921px) 100vw, 921px">
+![GitHubでリビジョン管理](./Screen-Shot-2022-08-02-at-14.31.27.png)
 
 取得できました！
 
