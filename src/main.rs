@@ -53,13 +53,23 @@ async fn main() -> Result<(), reqwest::Error> {
     // TODO(okubo): parse_textの先頭にtitle description, created_atも入れる
     let sections = html
         .children()
-        .map(|node| {
-            let section = text::parse_text(node);
-            section.content
-        })
+        .map(|node| text::parse_text(node))
         .collect::<Vec<_>>();
 
-    match file::create_file(sections.join("\n")) {
+    for section in sections.clone() {
+        println!("aaaa");
+        match section.download_image().await {
+            Ok(_) => println!("created file"),
+            Err(_) => eprintln!("failured"),
+        };
+    }
+
+    let section_string = sections
+        .into_iter()
+        .map(|section| section.content)
+        .collect::<Vec<_>>();
+
+    match file::create_file(section_string.join("\n")) {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
     };
