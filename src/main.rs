@@ -60,12 +60,18 @@ async fn main() -> Result<(), reqwest::Error> {
         .map(|node| text::parse_text(node))
         .collect::<Vec<_>>();
 
+    let mut index = 1;
     // NOTE(okubo): 画像を保存
     for section in sections.clone() {
-        match section.download_image(&post.slug).await {
-            Ok(_) => println!("created file"),
-            Err(_) => eprintln!("failured"),
-        };
+        if section.is_image() {
+            match section.download_image(&post.slug, index).await {
+                Ok(_) => {
+                    index += 1;
+                    println!("created file");
+                }
+                Err(_) => eprintln!("failured"),
+            };
+        }
     }
 
     let section_string = sections

@@ -24,11 +24,18 @@ pub struct Section {
 }
 
 impl Section {
+    pub fn is_image(&self) -> bool {
+        if let SectionKind::Image(_, _) = &self.kind {
+            return true;
+        }
+        false
+    }
+
     // TODO(okubo): 可能なら、kindがimageの時だけ、みたいな実装が良さそう
-    pub async fn download_image(&self, slug: &String) -> Result<(), reqwest::Error> {
+    pub async fn download_image(&self, slug: &String, index: i32) -> Result<(), reqwest::Error> {
         println!("download_image haitta!!!!");
-        if let SectionKind::Image(file_name, src) = &self.kind {
-            let path = format!("./posts/{}/{}", slug, file_name);
+        if let SectionKind::Image(extension, src) = &self.kind {
+            let path = format!("./posts/{}/{}.{}", slug, index.to_string(), extension);
             let mut file = File::create(path).unwrap();
             let image_string: String = reqwest::Client::new().get(src).send().await?.text().await?;
             match std::io::copy(&mut image_string.as_bytes(), &mut file) {
@@ -141,9 +148,11 @@ pub fn parse_text(node: Node) -> Section {
 
         let splited_image_url: Vec<String> = src.split("/").map(|s| s.to_string()).collect();
         let file_name = splited_image_url.last().unwrap();
+        let splited_file_name = file_name.split(".");
+        let extension = splited_file_name.last().unwrap();
 
         return Section {
-            kind: SectionKind::Image(file_name.to_string(), src.to_string()),
+            kind: SectionKind::Image(extension.to_string(), src.to_string()),
             content: format!("![GitHubでリビジョン管理](./{})", file_name),
         };
     }
