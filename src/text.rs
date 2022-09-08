@@ -170,6 +170,7 @@ fn unused_tag(s: String) -> String {
     trimed_string = re.replace_all(&trimed_string, "").to_string();
     trimed_string.to_string()
 }
+
 fn trim_newline(s: String) -> String {
     let mut base_string = s;
     loop {

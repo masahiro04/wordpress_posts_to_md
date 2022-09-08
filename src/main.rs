@@ -38,6 +38,19 @@ async fn main() -> Result<(), reqwest::Error> {
     // TODO(okubo): 3. 記事はindex.mdで保存していく
     // TODO(okubo): 4. header部分にはmeta情報などを記載
     // TODO(okubo): 5. wordpressのtotal count情報からloopして検索を行っていく
+
+    let resp = reqwest::Client::new()
+        .get("https://mokubo.website/wp-json/wp/v2/posts")
+        .send()
+        .await
+        .unwrap();
+
+    // TODO(okubo): totalの数字をPERで割って全てを取得する。そしてVecを作成
+    // TODO(okubo): その後に保存していく
+    let total_posts = resp.headers().get("x-wp-total").unwrap().to_str().unwrap();
+
+    println!("posts length is {}:", total_posts);
+
     let post: Post = reqwest::Client::new()
         .get("https://mokubo.website/wp-json/wp/v2/posts/4846")
         .send()
