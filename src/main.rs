@@ -31,6 +31,11 @@ struct Post {
     categories: Vec<i32>,
 }
 
+struct PostMetadata {
+    tags: String,
+    title: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     // TODO(okubo): 1. slugをdir名にして、requestに応じてdirを作成してその中でファイルを作っている
@@ -39,24 +44,25 @@ async fn main() -> Result<(), reqwest::Error> {
     // TODO(okubo): 4. header部分にはmeta情報などを記載
     // TODO(okubo): 5. wordpressのtotal count情報からloopして検索を行っていく
 
-    let resp = reqwest::Client::new()
-        .get("https://mokubo.website/wp-json/wp/v2/posts")
-        .send()
-        .await
-        .unwrap();
+    // let resp = reqwest::Client::new()
+    //     .get("https://mokubo.website/2022/08/i-installed-cloud_firestore-in-flutter-and-got-both-msporturlconnectiondelegate/")
+    //     .send()
+    //     .await
+    //     .unwrap();
 
     // TODO(okubo): totalの数字をPERで割って全てを取得する。そしてVecを作成
-    // TODO(okubo): その後に保存していく
-    let total_posts = resp.headers().get("x-wp-total").unwrap().to_str().unwrap();
+    // TODO(okubo): 数字自体を取得する箇所で、問題なく動く
+    // let total_posts = resp.headers().get("x-wp-total").unwrap().to_str().unwrap();
+    // println!("posts length is {}:", total_posts);
 
-    println!("posts length is {}:", total_posts);
-
+    println!("sentinel1");
     let post: Post = reqwest::Client::new()
-        .get("https://mokubo.website/wp-json/wp/v2/posts/4846")
+        .get("https://mokubo.website/wp-json/wp/v2/posts/4842")
         .send()
         .await?
         .json()
         .await?;
+    println!("sentinel2");
 
     // NOTE(okubo): 管理しやすいように上の階層で対応
     // TODO(okubo): unwrapではなくerror handlingしたほうが良い
@@ -86,6 +92,13 @@ async fn main() -> Result<(), reqwest::Error> {
             };
         }
     }
+
+    let _post_metadata = PostMetadata {
+        tags: String::from(""),
+        title: post.title.rendered,
+    };
+
+    // let metadata = format!("```metadata\n{}\n```", post_metadata);
 
     let section_string = sections
         .into_iter()

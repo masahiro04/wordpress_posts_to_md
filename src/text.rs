@@ -13,6 +13,7 @@ pub enum SectionKind {
     H6,
     Text,
     Link,
+    List,
     Code,
     Image(String, String),
 }
@@ -155,8 +156,16 @@ pub fn parse_text(node: Node) -> Section {
             kind: SectionKind::Image(extension.to_string(), src.to_string()),
             content: format!("![GitHubでリビジョン管理](./{})", file_name),
         };
+    } else if Regex::new(&r"<ul(?: .+?)?>.*?</ul>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        let items: Vec<String> = node.find(Name("li")).map(|n| n.text()).collect();
+        return Section {
+            kind: SectionKind::List,
+            content: format!("- {}", items.join("\n- ")),
+        };
     }
-
     return Section {
         kind: SectionKind::Text,
         content: format!("{}", trimed_html),
