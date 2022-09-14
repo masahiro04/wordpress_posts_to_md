@@ -3,7 +3,6 @@ use select::predicate::Class;
 
 use serde::Deserialize;
 use std::fs;
-// use std::future::Future;
 extern crate reqwest;
 
 mod file;
@@ -31,12 +30,14 @@ struct Post {
     categories: Vec<i32>,
 }
 
+// TODO(okubo): entities移動させたい
 #[derive(Debug, Deserialize)]
 struct Category {
     id: i32,
     name: String,
 }
 
+// TODO(okubo): usecaseに移動させたい
 fn get_category_name_by_id(categories: &Vec<Category>, ids: Vec<i32>) -> Vec<String> {
     let mut names: Vec<String> = Vec::new();
 
@@ -80,13 +81,6 @@ async fn main() -> Result<(), reqwest::Error> {
         .await?
         .json()
         .await?;
-    // let category_names = categories
-    //     .into_iter()
-    //     .map(|category| category.name)
-    //     .collect::<Vec<_>>();
-    //
-    // println!("{}", category_names.clone().len());
-    // println!("{}", category_names.join(", "));
 
     let post: Post = reqwest::Client::new()
         .get("https://mokubo.website/wp-json/wp/v2/posts/4627")
@@ -123,8 +117,6 @@ async fn main() -> Result<(), reqwest::Error> {
             };
         }
     }
-
-    // let post_categories = categories.into_iter().map(|category| post.categories.incl);
 
     let category_names = get_category_name_by_id(&categories, post.categories)
         .into_iter()
