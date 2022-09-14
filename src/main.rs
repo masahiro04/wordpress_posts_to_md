@@ -31,9 +31,26 @@ struct Post {
     categories: Vec<i32>,
 }
 
-struct PostMetadata {
-    tags: String,
-    title: String,
+#[derive(Debug, Deserialize)]
+struct Category {
+    id: i32,
+    name: String,
+}
+
+fn get_category_name_by_id(categories: &Vec<Category>, ids: Vec<i32>) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
+
+    for id in ids {
+        categories
+            .into_iter()
+            .map(|category| {
+                if category.id == id {
+                    names.push(category.name.clone());
+                }
+            })
+            .collect::<Vec<_>>();
+    }
+    names
 }
 
 #[tokio::main]
@@ -55,14 +72,28 @@ async fn main() -> Result<(), reqwest::Error> {
     // let total_posts = resp.headers().get("x-wp-total").unwrap().to_str().unwrap();
     // println!("posts length is {}:", total_posts);
 
-    println!("sentinel1");
-    let post: Post = reqwest::Client::new()
-        .get("https://mokubo.website/wp-json/wp/v2/posts/4842")
+    // NOTE(okubo): categoriesを全権取得
+    // TODO(okubo): 記事のidからcategoriesのnameを返す
+    let categories: Vec<Category> = reqwest::Client::new()
+        .get("https://mokubo.website/wp-json/wp/v2/categories?per_page=100")
         .send()
         .await?
         .json()
         .await?;
-    println!("sentinel2");
+    // let category_names = categories
+    //     .into_iter()
+    //     .map(|category| category.name)
+    //     .collect::<Vec<_>>();
+    //
+    // println!("{}", category_names.clone().len());
+    // println!("{}", category_names.join(", "));
+
+    let post: Post = reqwest::Client::new()
+        .get("https://mokubo.website/wp-json/wp/v2/posts/4627")
+        .send()
+        .await?
+        .json()
+        .await?;
 
     // NOTE(okubo): 管理しやすいように上の階層で対応
     // TODO(okubo): unwrapではなくerror handlingしたほうが良い
@@ -93,19 +124,30 @@ async fn main() -> Result<(), reqwest::Error> {
         }
     }
 
-    let _post_metadata = PostMetadata {
-        tags: String::from(""),
-        title: post.title.rendered,
-    };
+    // let post_categories = categories.into_iter().map(|category| post.categories.incl);
 
-    // let metadata = format!("```metadata\n{}\n```", post_metadata);
+    let category_names = get_category_name_by_id(&categories, post.categories)
+        .into_iter()
+        .map(|category| category)
+        .collect::<Vec<_>>()
+        .join(", ");
+    let metadata: Vec<String> = vec![format!(
+        r#"```metadata
+{{
+    "title": "{}",
+    "date": "{}",
+    "categories": "{}",
+}}```"#,
+        post.title.rendered, post.date, category_names,
+    )];
 
     let section_string = sections
         .into_iter()
         .map(|section| section.content)
         .collect::<Vec<_>>();
+    let str_vec: Vec<String> = [metadata, section_string].concat();
 
-    match file::create_file(post.slug, section_string.join("\n")) {
+    match file::create_file(post.slug, str_vec.join("\n")) {
         Ok(_) => println!("success"),
         Err(_) => eprintln!("error"),
     };

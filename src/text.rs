@@ -165,7 +165,13 @@ pub fn parse_text(node: Node) -> Section {
             kind: SectionKind::List,
             content: format!("- {}", items.join("\n- ")),
         };
+    } else if Regex::new(&r"<blockquote(?: .+?)?>.*?</blockquote>")
+        .unwrap()
+        .is_match(&trimed_html)
+    {
+        println!("Quote hitta!!!!!!!!");
     }
+
     return Section {
         kind: SectionKind::Text,
         content: format!("{}", trimed_html),
