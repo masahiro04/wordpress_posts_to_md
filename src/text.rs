@@ -33,16 +33,17 @@ impl Section {
     }
 
     // TODO(okubo): 可能なら、kindがimageの時だけ、みたいな実装が良さそう
-    pub async fn download_image(&self, slug: &String, index: i32) -> Result<(), reqwest::Error> {
-        println!("download_image haitta!!!!");
+    pub fn download_image(&self, slug: &String, index: i32) -> Result<(), reqwest::Error> {
+        // TODO(okubo): blocking入れたので同期処理で簡単に実装する
         if let SectionKind::Image(extension, src) = &self.kind {
             let path = format!("./posts/{}/{}.{}", slug, index.to_string(), extension);
+            println!("sentinel3");
+            // NOTE(okubo): 画像保存機能
             let mut file = File::create(path).unwrap();
-            let image_string: String = reqwest::Client::new().get(src).send().await?.text().await?;
-            match std::io::copy(&mut image_string.as_bytes(), &mut file) {
-                Ok(_) => println!(""),
-                Err(e) => eprintln!("{}", e),
-            }
+            reqwest::blocking::get(src)
+                .unwrap()
+                .copy_to(&mut file)
+                .unwrap();
         }
         Ok(())
     }
@@ -152,9 +153,10 @@ pub fn parse_text(node: Node) -> Section {
         let splited_file_name = file_name.split(".");
         let extension = splited_file_name.last().unwrap();
 
+        // TODO(okubo): 可能であればALTを抜き出して入れたい
         return Section {
             kind: SectionKind::Image(extension.to_string(), src.to_string()),
-            content: format!("![GitHubでリビジョン管理](./{})", file_name),
+            content: format!("![](./{})", file_name),
         };
     } else if Regex::new(&r"<ul(?: .+?)?>.*?</ul>")
         .unwrap()
